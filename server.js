@@ -28,12 +28,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Use the logger middleware
 app.use(logger);
 // Apply CORS with the configured options
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors());
 
-// Define a simple route to make sure the server is working
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+// Define the root route and associate it with the root router
+app.use("/", require("./routes/root"));
 
 // Import routes
 const equbRoutes = require("./routes/equbRoutes");
