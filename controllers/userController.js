@@ -4,8 +4,20 @@ const jwt = require("jsonwebtoken");
 
 exports.registerUser = async (req, res) => {
   try {
+    // Check if all required fields are filled
+    const { email, password, firstname, lastname } = req.body;
+    if (!email || !password || !firstname || !lastname) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Check for duplicate email
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already in use" });
+    }
+
     // Hash password
-    const hashedPassword = await bcrypt.hash(req.body.password, 8);
+    const hashedPassword = await bcrypt.hash(password, 8);
 
     // Create user
     const user = new User({
@@ -15,24 +27,11 @@ exports.registerUser = async (req, res) => {
 
     await user.save();
 
-    // Create token (implement the generateAuthToken method on the user instance)
-    const token = await user.generateAuthToken();
+    // Respond with the user object without the password
+    const userResponse = { ...user._doc };
+    delete userResponse.password;
 
-    res.status(201).send({ user, token });
-  } catch (error) {
-    res.status(400).send(error);
-  }
-};
-
-exports.loginUser = async (req, res) => {
-  try {
-    // Authenticate user (implement the findByCredentials static method on the User model)
-    const user = await User.findByCredentials(
-      req.body.email,
-      req.body.password
-    );
-    const token = await user.generateAuthToken();
-    res.send({ user, token });
+    res.status(201).send({ user: userResponse });
   } catch (error) {
     res.status(400).send(error);
   }
@@ -108,54 +107,5 @@ exports.deleteUser = async (req, res) => {
     res.send({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).send(error);
-  }
-};
-
-exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const resetToken = generateToken(user._id);
-    await sendPasswordResetEmail(
-      user.email,
-      resetToken,
-      req.protocol,
-      req.get("host")
-    );
-    res.status(200).json({ message: "Password reset email sent" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
-  }
-};
-
-exports.resetPassword = async (req, res) => {
-  const { newPassword } = req.body;
-  const { token } = req.params;
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
-    await user.save();
-
-    res.status(200).json({ message: "Password has been reset successfully" });
-  } catch (error) {
-    if (error.name === "JsonWebTokenError") {
-      return res.status(400).json({ error: "Invalid or expired token" });
-    }
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
   }
 };

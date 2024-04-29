@@ -1,10 +1,5 @@
 const User = require("../model/User");
 
-exports.getAdminDashboard = async (req, res) => {
-  // Logic to retrieve admin dashboard information
-  res.status(200).json({ message: "Admin dashboard data" });
-};
-
 exports.createUser = async (req, res) => {
   // Logic to create a new user
   try {

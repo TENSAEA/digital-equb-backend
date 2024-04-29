@@ -23,8 +23,4 @@ router.put(
 // Delete user
 router.delete("/:id", userController.deleteUser);
 
-// Add forgot password endpoints
-router.post("/forgot-password", userController.forgotPassword);
-router.post("/reset-password/:token", userController.resetPassword);
-
 module.exports = router;
